@@ -84,6 +84,10 @@ let books = [
 ]
 
 const typeDefs = gql`
+  type Author {
+    name: String!
+    bookCount: Int!
+  }
   type Book {
       title: String!
       published: Int!
@@ -91,11 +95,11 @@ const typeDefs = gql`
       id: ID!
       genres: [String!]!
   }
-
   type Query {
       authorCount: Int!
       bookCount: Int!
-      allBooks: [Book!]!
+      allBooks(author: String): [Book!]!
+      allAuthors: [Author!]!
   }
 `
 
@@ -111,7 +115,33 @@ const resolvers = {
         })
         return Object.keys(map).length
       },
-      allBooks: () => books
+      allBooks: (root, args) => {
+          if (args.author) {
+            console.log('in the author')
+            return books.filter(book => book.author === args.author)
+          } else {
+            console.log('in the other')
+            return books
+          }
+      },
+      allAuthors: () => {
+        const authorBookCount = {}
+        const authorObjects = []
+        books.forEach(book => {
+            if (!authorBookCount[book.author]){
+                authorBookCount[book.author] = 1
+            } else {
+                authorBookCount[book.author]++
+            }
+        })
+        for (key in authorBookCount) {
+            authorObjects.push({
+                name: key,
+                bookCount: authorBookCount[key]
+            })
+        }
+        return authorObjects
+    }
   }
 }
 
