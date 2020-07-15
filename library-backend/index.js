@@ -1,4 +1,5 @@
 const { ApolloServer, gql } = require('apollo-server')
+const { v1: uuid } = require('uuid')
 
 let authors = [
   {
@@ -87,34 +88,35 @@ const typeDefs = gql`
   type Author {
     name: String!
     bookCount: Int!
+    born: Int
   }
   type Book {
-      title: String!
-      published: Int!
-      author: String!
-      id: ID!
-      genres: [String!]!
+    title: String!
+    published: Int!
+    author: String!
+    id: ID!
+    genres: [String!]!
   }
   type Query {
-      authorCount: Int!
-      bookCount: Int!
-      allBooks(author: String, genre: String): [Book!]!
-      allAuthors: [Author!]!
+    authorCount: Int!
+    bookCount: Int!
+    allBooks(author: String, genre: String): [Book!]!
+    allAuthors: [Author!]!
+  }
+  type Mutation {
+    addBook(
+        title: String!
+        author: String!
+        published: Int!
+        genres: [String!]!
+    ) : Book
   }
 `
 
 const resolvers = {
   Query: {
       bookCount: () => books.length,
-      authorCount: () => {
-        const map = {}
-        books.forEach(book => {
-            if (!map[book.author]){
-                map[book.author] = true
-            }
-        })
-        return Object.keys(map).length
-      },
+      authorCount: () => authors.length,
       allBooks: (root, args) => {
         const filteredBooks = []
         if (!args.author && !args.genre) {
@@ -139,7 +141,11 @@ const resolvers = {
       },
       allAuthors: () => {
         const authorBookCount = {}
+        const authorBorn = {}
         const authorObjects = []
+        authors.forEach(author => {
+            authorBorn[author.name] = author.born
+        })
         books.forEach(book => {
             if (!authorBookCount[book.author]){
                 authorBookCount[book.author] = 1
@@ -150,10 +156,34 @@ const resolvers = {
         for (key in authorBookCount) {
             authorObjects.push({
                 name: key,
-                bookCount: authorBookCount[key]
+                bookCount: authorBookCount[key],
+                born: authorBorn[key]
             })
         }
         return authorObjects
+    }
+  },
+  Mutation: {
+    addBook: (root, args) => {
+        const book = { ...args, id: uuid()}
+        let authorExists = false
+        // concat data to book
+        books = books.concat(book)
+        authors.forEach(author => {
+            if (author.name === args.author) {
+                authorExists = true
+            }
+        })
+        // if author dont exists, add to database
+        if(!authorExists) {
+            const newAuthor = {
+                name: args.author,
+                born: null,
+                id: uuid()
+            }
+            authors.concat(newAuthor)
+        }
+        return book
     }
   }
 }
