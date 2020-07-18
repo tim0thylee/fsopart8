@@ -89,6 +89,7 @@ const typeDefs = gql`
     name: String!
     bookCount: Int!
     born: Int
+    id: ID!
   }
   type Book {
     title: String!
