@@ -1,5 +1,22 @@
-const { ApolloServer, gql } = require('apollo-server')
+const { ApolloServer, UserInputError, gql } = require('apollo-server')
+const mongoose = require('mongoose')
 const { v1: uuid } = require('uuid')
+const Book = require('./schemas/Book')
+const Author = require('./schemas/Author')
+
+mongoose.set('useFindAndModify', false)
+
+const MONGODB_URI = 'mongodb+srv://fullstack:Beroo@cluster0-3jiim.mongodb.net/library?retryWrites=true&w=majority'
+
+console.log('connecting to', MONGODB_URI)
+
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => {
+    console.log('connected to MongoDB')
+  })
+  .catch((error) => {
+    console.log('error connection to MongoDB:', error.message)
+  })
 
 let authors = [
   {
@@ -94,7 +111,7 @@ const typeDefs = gql`
   type Book {
     title: String!
     published: Int!
-    author: String!
+    author: Author!
     id: ID!
     genres: [String!]!
   }
@@ -113,6 +130,9 @@ const typeDefs = gql`
     ) : Book
     editAuthor(
       name: String!, setBornTo: Int!
+    ) : Author
+    addAuthor(
+      name: String!, born: Int
     ) : Author
   }
 `
@@ -169,25 +189,23 @@ const resolvers = {
   },
   Mutation: {
     addBook: (root, args) => {
-        const book = { ...args, id: uuid()}
-        let authorExists = false
-        // concat data to book
-        books = books.concat(book)
-        authors.forEach(author => {
-            if (author.name === args.author) {
-                authorExists = true
-            }
-        })
-        // if author dont exists, add to database
-        if(!authorExists) {
-            const newAuthor = {
-                name: args.author,
-                born: null,
-                id: uuid()
-            }
-            authors.concat(newAuthor)
+      let foundAuthor = null
+      authors.forEach(author => {
+        if (author.name === args.author) {
+            authorExists = author
         }
-        return book
+      })
+      if(!foundAuthor) {
+          const newAuthor = {
+              name: args.author,
+              born: null,
+              id: uuid()
+          }
+          authors.concat(newAuthor)
+          foundAuthor = newAuthor
+      }
+      const book = new Book({...args, author: foundAuthor.id})
+      return book.save()
     },
     editAuthor: (root, args) => {
       const changeAuthor = authors.find(author => author.name === args.name)
@@ -195,6 +213,10 @@ const resolvers = {
       changeAuthor.born = args.setBornTo
       authors = authors.map(author => author.name == changeAuthor.name ? changeAuthor : author)
       return changeAuthor
+    },
+    addAuthor: (root, args) => {
+      const author = new Author({...args})
+      return author.save()
     }
   }
 }
