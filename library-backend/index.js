@@ -17,31 +17,31 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true 
     console.log('error connection to MongoDB:', error.message)
   })
 
-let authors = [
-  {
-    name: 'Robert Martin',
-    id: "afa51ab0-344d-11e9-a414-719c6709cf3e",
-    born: 1952,
-  },
-  {
-    name: 'Martin Fowler',
-    id: "afa5b6f0-344d-11e9-a414-719c6709cf3e",
-    born: 1963
-  },
-  {
-    name: 'Fyodor Dostoevsky',
-    id: "afa5b6f1-344d-11e9-a414-719c6709cf3e",
-    born: 1821
-  },
-  { 
-    name: 'Joshua Kerievsky', // birthyear not known
-    id: "afa5b6f2-344d-11e9-a414-719c6709cf3e",
-  },
-  { 
-    name: 'Sandi Metz', // birthyear not known
-    id: "afa5b6f3-344d-11e9-a414-719c6709cf3e",
-  },
-]
+// let authors = [
+//   {
+//     name: 'Robert Martin',
+//     id: "afa51ab0-344d-11e9-a414-719c6709cf3e",
+//     born: 1952,
+//   },
+//   {
+//     name: 'Martin Fowler',
+//     id: "afa5b6f0-344d-11e9-a414-719c6709cf3e",
+//     born: 1963
+//   },
+//   {
+//     name: 'Fyodor Dostoevsky',
+//     id: "afa5b6f1-344d-11e9-a414-719c6709cf3e",
+//     born: 1821
+//   },
+//   { 
+//     name: 'Joshua Kerievsky', // birthyear not known
+//     id: "afa5b6f2-344d-11e9-a414-719c6709cf3e",
+//   },
+//   { 
+//     name: 'Sandi Metz', // birthyear not known
+//     id: "afa5b6f3-344d-11e9-a414-719c6709cf3e",
+//   },
+// ]
 
 /*
  * Saattaisi olla järkevämpää assosioida kirja ja sen tekijä tallettamalla kirjan yhteyteen tekijän nimen sijaan tekijän id
@@ -103,7 +103,7 @@ let books = [
 const typeDefs = gql`
   type Author {
     name: String!
-    bookCount: Int!
+    bookCount: Int
     born: Int
     id: ID!
   }
@@ -138,8 +138,8 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-      bookCount: () => books.length,
-      authorCount: () => authors.length,
+      bookCount: () => Book.collection.countDocuments(),
+      authorCount: () => Author.collection.countDocuments(),
       allBooks: (root, args) => {
         const filteredBooks = []
         if (!args.author && !args.genre) {
@@ -162,56 +162,36 @@ const resolvers = {
         }
         return filteredBooks
       },
-      allAuthors: () => {
-        const authorBookCount = {}
-        const authorBorn = {}
+      allAuthors: async () => {
+        const authors = await Author.find({})
         const authorObjects = []
-        authors.forEach(author => {
-            authorBorn[author.name] = author.born
-        })
-        books.forEach(book => {
-            if (!authorBookCount[book.author]){
-                authorBookCount[book.author] = 1
-            } else {
-                authorBookCount[book.author]++
-            }
-        })
-        for (key in authorBookCount) {
-            authorObjects.push({
-                name: key,
-                bookCount: authorBookCount[key],
-                born: authorBorn[key]
-            })
+        for (const author of authors) {
+          const authorObject = {}
+          authorObject.name = author.name
+          authorObject.born = author.born
+          let bookCount = await Book.find({ author: { $in: [author.id] } })
+          bookCount = bookCount.length
+          authorObject.bookCount = bookCount
+          authorObjects.push(authorObject)
         }
         return authorObjects
     }
   },
   Mutation: {
-    addBook: (root, args) => {
-      let foundAuthor = null
-      authors.forEach(author => {
-        if (author.name === args.author) {
-            authorExists = author
-        }
-      })
-      if(!foundAuthor) {
-          const newAuthor = {
-              name: args.author,
-              born: null,
-              id: uuid()
-          }
-          authors.concat(newAuthor)
-          foundAuthor = newAuthor
+    addBook: async (root, args) => {
+      let author = await Author.findOne({ name: args.author})
+      console.log(author)
+      if(!author) {
+        author = new Author({name: args.author, born: null})
+        author.save()
       }
-      const book = new Book({...args, author: foundAuthor.id})
+      const book = new Book({...args, author: author.id})
       return book.save()
     },
-    editAuthor: (root, args) => {
-      const changeAuthor = authors.find(author => author.name === args.name)
-      if (!changeAuthor) return null
-      changeAuthor.born = args.setBornTo
-      authors = authors.map(author => author.name == changeAuthor.name ? changeAuthor : author)
-      return changeAuthor
+    editAuthor: async (root, args) => {
+      let author = await Author.findOne({name: args.name})
+      author.born = args.setBornTo
+      return author.save()
     },
     addAuthor: (root, args) => {
       const author = new Author({...args})
