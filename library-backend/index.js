@@ -3,10 +3,9 @@ const mongoose = require('mongoose')
 const { v1: uuid } = require('uuid')
 const Book = require('./schemas/Book')
 const Author = require('./schemas/Author')
+const MONGODB_URI = require('./secret')
 
 mongoose.set('useFindAndModify', false)
-
-const MONGODB_URI = 'mongodb+srv://fullstack:Beroo@cluster0-3jiim.mongodb.net/library?retryWrites=true&w=majority'
 
 console.log('connecting to', MONGODB_URI)
 
