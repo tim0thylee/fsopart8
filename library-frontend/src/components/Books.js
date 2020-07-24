@@ -12,7 +12,7 @@ const Books = (props) => {
   if (result.loading ) {
     return <div>loading...</div>
   }
-  console.log(result)
+ 
   return (
     <div>
       <h2>books</h2>

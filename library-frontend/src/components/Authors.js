@@ -1,5 +1,5 @@
   
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@apollo/client';
 import { ALL_AUTHORS, EDIT_BIRTH_YEAR } from '../queries'
 
@@ -14,9 +14,14 @@ const Authors = (props) => {
     event.preventDefault()
     let intBorn =  parseInt(born, 10)
     editAuthor({variables: {name, setBornTo: intBorn}})
-    setName('')
     setBorn('')
   }
+
+  useEffect(()=> {
+    if(result.data) {
+      setName(result.data.allAuthors[0].name)
+    }
+  }, [result])
 
   if (!props.show) {
     return null
@@ -25,7 +30,7 @@ const Authors = (props) => {
   if (result.loading ) {
     return <div>loading...</div>
   }
-
+ 
   return (
     <div>
       <h2>authors</h2>
@@ -52,8 +57,9 @@ const Authors = (props) => {
       <h2>Set birthyear</h2>
         <form onSubmit={updateInfo}>
         <select value={name} onChange={e => setName(e.target.value)}>
-            {result.data.allAuthors.map(a => 
-              <option value={a.name}>{a.name}</option>
+            {result.data.allAuthors.map(a => {
+                return <option value={a.name}>{a.name}</option>
+              }
             )}
         </select>
         <div>
