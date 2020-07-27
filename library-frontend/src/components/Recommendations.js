@@ -8,7 +8,7 @@ const Recommend = props => {
     const userInfo = useQuery(USER_INFO)
 
     useEffect(() => {
-        if (userInfo.data) {
+        if (userInfo && userInfo.data && userInfo.data.me) {
             getBooks({ variables: {genre: userInfo.data.me.favoriteGenre}})
         }
     }, [userInfo])
@@ -31,7 +31,7 @@ const Recommend = props => {
     return (
         <div>
             <h2>recommendations</h2>
-            <p>books in your favorite genre <b>{userInfo.data.me.favoriteGenre}</b></p>
+            <p>books in your favorite genre <b>{userInfo && userInfo.data && userInfo.data.me ? userInfo.data.me.favoriteGenre : null}</b></p>
             <table>
                 <tbody>
                 <tr>

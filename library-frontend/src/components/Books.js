@@ -47,7 +47,7 @@ const Books = (props) => {
             </th>
           </tr>
           {result.data.allBooks
-            .map(a =>{
+            .map(a => {
               let inFilter = false
               a.genres.forEach(genre => {
                 if (genre === filterGenre) {
