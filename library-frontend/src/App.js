@@ -5,6 +5,7 @@ import Authors from './components/Authors'
 import Books from './components/Books'
 import NewBook from './components/NewBook'
 import Login from './components/Login'
+import Recommendations from './components/Recommendations'
 
 const App = () => {
   const [page, setPage] = useState('authors')
@@ -25,6 +26,7 @@ const App = () => {
         <button onClick={() => setPage('books')}>books</button>
         {!localStorage.getItem('user-token') ? <button onClick={() => setPage('login')}>login</button> : null}
         {localStorage.getItem('user-token') ? <button onClick={() => setPage('add')}>add book</button> : null}
+        {localStorage.getItem('user-token') ? <button onClick={() => setPage('recommend')}>recommend</button> : null}
         {localStorage.getItem('user-token') ? <button onClick={logout}>logout</button> : null}
       </div>
 
@@ -38,6 +40,10 @@ const App = () => {
 
       <NewBook
         show={page === 'add'}
+      />
+
+      <Recommendations
+        show={page === 'recommend'}
       />
 
       {!localStorage.getItem('user-token') ? 
