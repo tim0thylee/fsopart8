@@ -26,8 +26,7 @@ const Recommend = props => {
     if (bookResult.loading || userInfo.loading) {
         return "loading..."
     }
-    console.log(books)
-    console.log(userInfo)
+
     return (
         <div>
             <h2>recommendations</h2>
