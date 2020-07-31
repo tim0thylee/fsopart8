@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useApolloClient, useSubscription, useQuery } from '@apollo/client';
-import { BOOK_ADDED, ALL_BOOKS, USER_INFO, BOOKS_BY_GENRE } from './queries'
+import { BOOK_ADDED, ALL_BOOKS, USER_INFO } from './queries'
 import Authors from './components/Authors'
 import Books from './components/Books'
 import NewBook from './components/NewBook'
@@ -10,36 +10,21 @@ import Recommendations from './components/Recommendations'
 
 const App = () => {
   const [page, setPage] = useState('authors')
-  const [userGenre, setUserGenre] = useState('')
   const [token, setToken] = useState(null)
   const client = useApolloClient()
-  const userInfo = useQuery(USER_INFO)
-
-  useEffect(() => {
-    if (userInfo && userInfo.data && userInfo.data.me) {
-      setUserGenre(userInfo.data.me.favoriteGenre)
-  }
-  }, [userInfo])
 
   const updateCacheWith = (addedBook) => {
     const includedIn = (set, object) => 
       set.map(p => p.id).includes(object.id)
 
     const dataInStore = client.readQuery({ query: ALL_BOOKS })
-    const dataByGenre = client.readQuery({ query: BOOKS_BY_GENRE, variables: {genre: userGenre}})
+  
     if (!includedIn(dataInStore.allBooks, addedBook)) {
       client.writeQuery({
         query: ALL_BOOKS,
         data: { allBooks : dataInStore.allBooks.concat(addedBook) }
       })
     }
-    if (!includedIn(dataByGenre.allBooks, addedBook)) {
-      console.log('called')
-      client.writeQuery({
-        query: BOOKS_BY_GENRE,
-        data: {allBooks: dataByGenre.allBooks.concat(addedBook)}
-      })
-    }   
   }
 
   useSubscription(BOOK_ADDED, {

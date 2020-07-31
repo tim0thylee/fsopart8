@@ -27,6 +27,7 @@ const Recommend = props => {
         return "loading..."
     }
 
+    console.log(bookResult)
     return (
         <div>
             <h2>recommendations</h2>

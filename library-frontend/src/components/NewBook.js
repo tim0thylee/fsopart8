@@ -1,16 +1,24 @@
-import React, { useState } from 'react'
-import { useMutation } from '@apollo/client';
-import { ALL_AUTHORS, ADD_BOOK, ALL_BOOKS } from '../queries'
-
-
+import React, { useState, useEffect } from 'react'
+import { useMutation, useQuery } from '@apollo/client';
+import { ALL_AUTHORS, ADD_BOOK, BOOKS_BY_GENRE, USER_INFO } from '../queries'
 
 const NewBook = (props) => {
   const [title, setTitle] = useState('')
   const [author, setAuhtor] = useState('')
   const [published, setPublished] = useState('')
   const [genre, setGenre] = useState('')
+  const [userGenre, setUserGenre] = useState('')
   const [genres, setGenres] = useState([])
-  const [ createBook ] = useMutation(ADD_BOOK, {refetchQueries: [{query:ALL_AUTHORS}]})
+  const userInfo = useQuery(USER_INFO)
+
+  useEffect(() => {
+    if (userInfo && userInfo.data && userInfo.data.me) {
+      setUserGenre(userInfo.data.me.favoriteGenre)
+  }
+  }, [userInfo])
+
+
+  const [ createBook ] = useMutation(ADD_BOOK, {refetchQueries: [{query:ALL_AUTHORS}, {query: BOOKS_BY_GENRE, variables: {genre: userGenre}}]})
 
   if (!props.show) {
     return null
