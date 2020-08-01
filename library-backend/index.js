@@ -28,58 +28,6 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true 
  * Yksinkertaisuuden vuoksi tallennamme kuitenkin kirjan yhteyteen tekijän nimen
 */
 
-let books = [
-  {
-    title: 'Clean Code',
-    published: 2008,
-    author: 'Robert Martin',
-    id: "afa5b6f4-344d-11e9-a414-719c6709cf3e",
-    genres: ['refactoring']
-  },
-  {
-    title: 'Agile software development',
-    published: 2002,
-    author: 'Robert Martin',
-    id: "afa5b6f5-344d-11e9-a414-719c6709cf3e",
-    genres: ['agile', 'patterns', 'design']
-  },
-  {
-    title: 'Refactoring, edition 2',
-    published: 2018,
-    author: 'Martin Fowler',
-    id: "afa5de00-344d-11e9-a414-719c6709cf3e",
-    genres: ['refactoring']
-  },
-  {
-    title: 'Refactoring to patterns',
-    published: 2008,
-    author: 'Joshua Kerievsky',
-    id: "afa5de01-344d-11e9-a414-719c6709cf3e",
-    genres: ['refactoring', 'patterns']
-  },  
-  {
-    title: 'Practical Object-Oriented Design, An Agile Primer Using Ruby',
-    published: 2012,
-    author: 'Sandi Metz',
-    id: "afa5de02-344d-11e9-a414-719c6709cf3e",
-    genres: ['refactoring', 'design']
-  },
-  {
-    title: 'Crime and punishment',
-    published: 1866,
-    author: 'Fyodor Dostoevsky',
-    id: "afa5de03-344d-11e9-a414-719c6709cf3e",
-    genres: ['classic', 'crime']
-  },
-  {
-    title: 'The Demon ',
-    published: 1872,
-    author: 'Fyodor Dostoevsky',
-    id: "afa5de04-344d-11e9-a414-719c6709cf3e",
-    genres: ['classic', 'revolution']
-  },
-]
-
 const typeDefs = gql`
   type User {
     username: String!
@@ -94,6 +42,7 @@ const typeDefs = gql`
     bookCount: Int
     born: Int
     id: ID!
+    books: [Book!]!
   }
   type Book {
     title: String!
@@ -137,6 +86,17 @@ const typeDefs = gql`
 `
 
 const resolvers = {
+  Author : {
+    books: async (root) => {
+      const author = await Author.find({name: root.name})
+      const books = await Book.find({
+        author: {
+          $in: [author[0]._id]
+        } 
+      })
+      return books
+    }
+  },
   Query: {
       bookCount: () => Book.collection.countDocuments(),
       authorCount: () => Author.collection.countDocuments(),
@@ -151,17 +111,7 @@ const resolvers = {
       },
       allAuthors: async () => {
         const authors = await Author.find({})
-        const authorObjects = []
-        for (const author of authors) {
-          const authorObject = {}
-          authorObject.name = author.name
-          authorObject.born = author.born
-          let bookCount = await Book.find({ author: { $in: [author.id] } })
-          bookCount = bookCount.length
-          authorObject.bookCount = bookCount
-          authorObjects.push(authorObject)
-        }
-        return authorObjects
+        return authors
     },
     me: (root, args, context) => {
       return context.currentUser
